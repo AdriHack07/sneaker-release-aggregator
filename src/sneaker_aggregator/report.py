@@ -5,11 +5,21 @@ from __future__ import annotations
 from datetime import datetime
 from pathlib import Path
 from typing import List
+from urllib.parse import quote_plus
 
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 
 from .config import Config
 from .models import Opportunity
+
+
+def raffle_search_url(name: str) -> str:
+    """Sole Retriever search for a shoe — lists every raffle/retailer for that release."""
+    return f"https://www.soleretriever.com/search?query={quote_plus(name)}"
+
+
+def nike_search_url(name: str) -> str:
+    return f"https://www.nike.com/w?q={quote_plus(name)}"
 
 _TEMPLATE_DIR = Path(__file__).resolve().parents[2] / "templates"
 
@@ -46,10 +56,12 @@ def render_html(opportunities: List[Opportunity], config: Config) -> str:
         opportunities=opportunities,
         brands=config.brands,
         resale_signal=config.resale_signal,
+        sort_by=config.sort_by,
         fee_pct=config.fees.total_pct,
         shipping_cost=config.fees.shipping_cost,
         market=config.api.market,
         cur=currency_symbol(config.api.market),
+        raffle_sites=config.raffle_sites,
         generated_at=datetime.now().strftime("%A, %d %B %Y"),
     )
 
@@ -86,7 +98,8 @@ def render_text(opportunities: List[Opportunity], config: Config) -> str:
                 parts.append(f"premium {s.annual_price_premium:.2f}x")
             if parts:
                 lines.append("  " + " | ".join(parts))
+        lines.append(f"  Enter raffles: {raffle_search_url(r.name)}")
         if r.stockx_url:
-            lines.append(f"  {r.stockx_url}")
+            lines.append(f"  Resale (StockX): {r.stockx_url}")
         lines.append("")
     return "\n".join(lines)

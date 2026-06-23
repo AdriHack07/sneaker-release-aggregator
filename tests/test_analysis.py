@@ -133,6 +133,20 @@ def test_find_opportunities_filters_brand_and_ranks_by_profit():
     assert [o.release.sku for o in opps] == ["B", "A"]
 
 
+def test_find_opportunities_sort_by_date():
+    cfg = default_config()
+    cfg.sort_by = "date"
+    today = date(2026, 6, 23)
+    releases = [
+        make_release(sku="LATER", release_date=date(2026, 7, 20), lowest_ask=600.0),
+        make_release(sku="SOONER", release_date=date(2026, 6, 25), lowest_ask=600.0),
+        make_release(sku="UNDATED", release_date=None, lowest_ask=600.0),
+    ]
+    opps = find_opportunities(releases, cfg, today=today)
+    # Soonest release first; undated sorts last.
+    assert [o.release.sku for o in opps] == ["SOONER", "LATER", "UNDATED"]
+
+
 def test_find_opportunities_respects_max_results():
     cfg = default_config()
     cfg.max_results = 1

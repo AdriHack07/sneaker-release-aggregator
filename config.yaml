@@ -32,8 +32,24 @@ thresholds:
 # or "average" (avg ask across sizes). Falls back to the other if missing.
 resale_signal: lowest_ask
 
+# How to order the report: "profit" (highest profit first) or "date" (soonest
+# release first). Override per-run with --sort profit|date.
+sort_by: profit
+
 # Max opportunities to include in the email (0 = no limit).
 max_results: 25
+
+# Raffle / retail quick-links shown in the report footer. Each card also links to a
+# per-shoe Sole Retriever raffle search automatically. Add your favourite sites here.
+raffle_sites:
+  - name: Nike SNKRS
+    url: https://www.nike.com/launch
+  - name: Sole Retriever (all raffles)
+    url: https://www.soleretriever.com/sneaker-release-dates
+  - name: END. Launches
+    url: https://launches.endclothing.com/
+  - name: The Edit LDN
+    url: https://www.theeditldn.com/en/raffles
 
 # How to fetch from KicksDB.
 api:

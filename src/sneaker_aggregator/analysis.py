@@ -74,7 +74,19 @@ def find_opportunities(
         if opp is not None:
             opportunities.append(opp)
 
-    opportunities.sort(key=lambda o: o.profit, reverse=True)
+    _sort_opportunities(opportunities, config.sort_by)
     if config.max_results > 0:
         opportunities = opportunities[: config.max_results]
     return opportunities
+
+
+def _sort_opportunities(opportunities: List[Opportunity], sort_by: str) -> None:
+    """Sort in place: by release date (soonest first) or by profit (highest first)."""
+    if sort_by == "date":
+        # Undated releases sort last; ties broken by higher profit.
+        far_future = date.max
+        opportunities.sort(
+            key=lambda o: (o.release.release_date or far_future, -o.profit)
+        )
+    else:
+        opportunities.sort(key=lambda o: o.profit, reverse=True)

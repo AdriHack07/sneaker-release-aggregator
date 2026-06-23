@@ -26,6 +26,7 @@ def _parse_args(argv=None):
     p.add_argument("--dump", action="store_true", help="print one raw API product and exit")
     p.add_argument("--config", default="config.yaml", help="path to config.yaml")
     p.add_argument("--out", default="report.html", help="output path for --dry-run")
+    p.add_argument("--sort", choices=["profit", "date"], help="override config sort order")
     return p.parse_args(argv)
 
 
@@ -38,6 +39,8 @@ def main(argv=None) -> int:
 
     args = _parse_args(argv)
     config = load_config(args.config)
+    if args.sort:
+        config.sort_by = args.sort
     secrets = load_secrets(require_email=not (args.dry_run or args.dump))
 
     with KicksDBClient(

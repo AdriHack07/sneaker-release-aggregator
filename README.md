@@ -84,6 +84,10 @@ All tunables live in [`config.yaml`](config.yaml) (secrets stay in env vars):
 - `thresholds` — `min_profit`, `min_margin`, and `min_sales_count` (liquidity guard; default
   `0` / off, because new & upcoming releases have no sales history yet).
 - `resale_signal` — `lowest_ask` (default) or `average`.
+- `sort_by` — `profit` (default) or `date` (soonest release first). Override per run with
+  `--sort profit|date`.
+- `raffle_sites` — quick-links shown in the report footer (each card also auto-links to a
+  per-shoe Sole Retriever raffle search and a Nike search).
 - `api.market` — pricing market (`US`, `DE`, `EU`, `UK`, …); set to your resale market.
 - `max_results` — cap on opportunities per email.
 

@@ -51,13 +51,31 @@ class ApiConfig(BaseModel):
     request_timeout_seconds: int = 30
 
 
+class RaffleSite(BaseModel):
+    """A quick-link shown in the report footer for entering raffles / buying at retail."""
+
+    name: str
+    url: str
+
+
+def _default_raffle_sites() -> List[RaffleSite]:
+    return [
+        RaffleSite(name="Nike SNKRS", url="https://www.nike.com/launch"),
+        RaffleSite(name="Sole Retriever (all raffles)", url="https://www.soleretriever.com/sneaker-release-dates"),
+        RaffleSite(name="END. Launches", url="https://launches.endclothing.com/"),
+        RaffleSite(name="The Edit LDN", url="https://www.theeditldn.com/en/raffles"),
+    ]
+
+
 class Config(BaseModel):
     brands: List[str] = Field(default_factory=lambda: ["Nike", "Jordan"])
     window: Window = Field(default_factory=Window)
     fees: Fees = Field(default_factory=Fees)
     thresholds: Thresholds = Field(default_factory=Thresholds)
     resale_signal: str = "lowest_ask"  # "lowest_ask" or "average"
+    sort_by: str = "profit"            # "profit" (desc) or "date" (soonest first)
     max_results: int = 25
+    raffle_sites: List[RaffleSite] = Field(default_factory=_default_raffle_sites)
     api: ApiConfig = Field(default_factory=ApiConfig)
 
 
