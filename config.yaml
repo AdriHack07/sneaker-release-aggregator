@@ -1,0 +1,44 @@
+# Sneaker Release Opportunity Aggregator — tunable configuration.
+# Secrets (API key, Gmail credentials) live in environment variables, NOT here.
+
+# Brands to track. Must match StockX brand names (KicksDB filters on `brand = '<name>'`).
+brands:
+  - Nike
+  - Jordan
+
+# Release window (relative to "today") to consider, in days.
+# Negative side = already released (now trading); positive = upcoming.
+# Upcoming releases only show a resale price once StockX has pre-release asks.
+window:
+  past_days: 30
+  future_days: 60
+
+# Resale platform fees & costs used to compute *net* take-home payout.
+# Defaults reflect 2026 StockX (~9% commission + ~3% processing) seller economics.
+fees:
+  commission_pct: 0.09         # platform selling commission
+  payment_processing_pct: 0.03 # payment processing
+  shipping_cost: 0.0           # flat shipping you pay per sale (StockX is usually free)
+
+# Opportunity thresholds: a release must clear ALL of these to appear in the report.
+thresholds:
+  min_profit: 40.0     # minimum net profit in currency units
+  min_margin: 0.20     # minimum net profit / retail (0.20 = 20%)
+  # Recent sales required for liquidity. Keep 0 for new/upcoming releases (they have
+  # no sales history yet); raise it if you only want pairs with proven demand.
+  min_sales_count: 0
+
+# Which resale signal to use: "lowest_ask" (cheapest size in stock — conservative)
+# or "average" (avg ask across sizes). Falls back to the other if missing.
+resale_signal: lowest_ask
+
+# Max opportunities to include in the email (0 = no limit).
+max_results: 25
+
+# How to fetch from KicksDB.
+api:
+  base_url: https://api.kicks.dev/v3
+  market: US            # pricing market: US, UK, DE, FR, EU, ... (set to your resale market)
+  page_limit: 50        # products per page (also the StockX "limit")
+  max_pages: 6          # pages to scan per brand (newest releases first)
+  request_timeout_seconds: 30

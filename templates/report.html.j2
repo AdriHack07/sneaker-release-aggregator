@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sneaker Flip Opportunities</title>
+</head>
+{% macro cell(label, value) -%}
+  <td style="padding:3px 14px 3px 0;color:#71717a;white-space:nowrap;">{{ label }}</td>
+  <td style="padding:3px 18px 3px 0;font-weight:600;white-space:nowrap;">{{ value }}</td>
+{%- endmacro %}
+{% macro money(v) -%}{% if v is not none %}{{ cur }}{{ "%.0f"|format(v) }}{% else %}—{% endif %}{%- endmacro %}
+<body style="margin:0;padding:0;background:#f4f4f5;font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;color:#18181b;">
+  <div style="max-width:820px;margin:0 auto;padding:24px;">
+    <h1 style="font-size:22px;margin:0 0 4px;">👟 Weekly Sneaker Flip Report</h1>
+    <p style="color:#71717a;margin:0 0 20px;font-size:14px;">
+      {{ generated_at }} · {{ opportunities|length }} opportunit{{ 'y' if opportunities|length == 1 else 'ies' }}
+      across {{ brands|join(', ') }} · prices in {{ market }} market
+    </p>
+
+    {% if not opportunities %}
+      <div style="background:#fff;border-radius:8px;padding:24px;text-align:center;color:#71717a;">
+        No releases cleared the profit thresholds this week.
+      </div>
+    {% else %}
+      {% for o in opportunities %}
+      {% set r = o.release %}
+      {% set s = r.stats %}
+      <div style="background:#fff;border-radius:10px;padding:16px;margin-bottom:14px;border:1px solid #e4e4e7;">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+          <tr>
+            <td width="84" valign="top">
+              {% if r.image_url %}
+              <img src="{{ r.image_url }}" width="72" height="72" alt=""
+                   style="border-radius:8px;background:#f4f4f5;object-fit:contain;">
+              {% endif %}
+            </td>
+            <td valign="top" style="padding-left:12px;">
+              <div style="font-weight:600;font-size:16px;">
+                {% if r.stockx_url %}<a href="{{ r.stockx_url }}" style="color:#18181b;text-decoration:none;">{{ r.name }}</a>{% else %}{{ r.name }}{% endif %}
+              </div>
+              <div style="color:#71717a;font-size:13px;margin-top:2px;">
+                {{ r.brand }} · {{ r.sku }}{% if r.release_date %} · drops {{ r.release_date }}{% endif %}
+              </div>
+            </td>
+            <td valign="top" align="right" width="120">
+              <div style="font-size:22px;font-weight:700;color:#16a34a;">+{{ money(o.profit) }}</div>
+              <div style="font-size:13px;color:#16a34a;">{{ "%.0f"|format(o.margin * 100) }}% margin</div>
+            </td>
+          </tr>
+        </table>
+
+        <table role="presentation" cellpadding="0" cellspacing="0" style="margin-top:12px;font-size:13px;border-top:1px solid #f4f4f5;padding-top:8px;width:100%;">
+          <tr>
+            {{ cell("Retail", money(r.retail_price)) }}
+            {{ cell("Lowest ask", money(r.lowest_ask)) }}
+            {{ cell("Avg ask", money(r.avg_price)) }}
+            {{ cell("Highest ask", money(r.highest_ask)) }}
+          </tr>
+          <tr>
+            {{ cell("Net payout", money(o.net_payout)) }}
+            {{ cell("90d sales", (s.last_90_days_sales_count if s and s.last_90_days_sales_count else "—")) }}
+            {{ cell("90d avg", money(s.last_90_days_average_price if s else none)) }}
+            {{ cell("Weekly orders", (r.weekly_orders if r.weekly_orders else "—")) }}
+          </tr>
+          <tr>
+            {{ cell("Annual sales", (s.annual_sales_count if s and s.annual_sales_count else "—")) }}
+            {{ cell("Annual avg", money(s.annual_average_price if s else none)) }}
+            {{ cell("Annual range", (money(s.annual_low) ~ "–" ~ money(s.annual_high)) if s and s.annual_high else "—") }}
+            {{ cell("Volatility", ("%.0f%%"|format(s.annual_volatility * 100)) if s and s.annual_volatility is not none else "—") }}
+          </tr>
+          <tr>
+            {{ cell("Resale premium", ("%.2fx"|format(s.annual_price_premium)) if s and s.annual_price_premium is not none else "—") }}
+            {{ cell("Annual $ volume", money(s.annual_total_dollars if s else none)) }}
+          </tr>
+        </table>
+      </div>
+      {% endfor %}
+    {% endif %}
+
+    <p style="color:#a1a1aa;font-size:12px;margin-top:24px;line-height:1.5;">
+      Profit = resale signal ({{ resale_signal }}) minus {{ "%.0f"|format(fee_pct * 100) }}% fees
+      {%- if shipping_cost %} and {{ money(shipping_cost) }} shipping{% endif %}, minus retail.
+      Asks are seller listings (StockX does not expose bids via this API). Statistics are
+      historical and may be blank for brand-new releases. Estimates only — verify on StockX
+      before buying; resale markets are volatile.
+    </p>
+  </div>
+</body>
+</html>
