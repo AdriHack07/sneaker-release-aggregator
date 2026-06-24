@@ -3,9 +3,9 @@
 from __future__ import annotations
 
 from datetime import date
-from typing import Optional
+from typing import List, Optional
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class MarketStats(BaseModel):
@@ -26,6 +26,14 @@ class MarketStats(BaseModel):
     last_90_days_average_price: Optional[float] = None
     last_90_days_range_high: Optional[float] = None
     last_90_days_range_low: Optional[float] = None
+
+
+class Stockist(BaseModel):
+    """A retailer/raffle where a shoe is (or will be) sold, with a direct link."""
+
+    shop_name: str
+    link: str
+    price: Optional[float] = None  # listed price at that shop, if provided
 
 
 class Release(BaseModel):
@@ -52,6 +60,10 @@ class Release(BaseModel):
     sales_count: Optional[int] = None  # recent sales (90d/annual) — 0 for new releases
     weekly_orders: int = 0
     stats: Optional[MarketStats] = None
+
+    # Retailers/raffles selling this shoe (populated from the unified endpoint; empty
+    # on the free tier). Excludes resale marketplaces — these are where you BUY.
+    stockists: List[Stockist] = Field(default_factory=list)
 
     def resale_price(self, prefer: str) -> Optional[float]:
         """Return the chosen resale signal, falling back to the other if missing.

@@ -101,14 +101,31 @@
           {{ stat("Weekly orders / annual $ volume", (r.weekly_orders if r.weekly_orders else "—") ~ "  /  " ~ money(s.annual_total_dollars if s else none), true) }}
         </table>
 
-        <!-- Actions -->
+        <!-- Where to buy: per-shoe retailers / raffles -->
+        {% if r.stockists %}
+        <div style="margin-top:16px;font-size:11px;letter-spacing:0.6px;color:#94a3b8;font-weight:700;text-transform:uppercase;">
+          Where to buy &amp; enter raffles ({{ r.stockists|length }})
+        </div>
+        <div style="margin-top:8px;">
+          {% for st in r.stockists %}
+            <a href="{{ st.link }}" style="display:inline-block;text-decoration:none;font-size:13px;color:#111827;font-weight:600;background:#f1f5f9;border:1px solid #e2e8f0;border-radius:8px;padding:8px 12px;margin:0 8px 8px 0;">
+              {{ st.shop_name }}{% if st.price %} · <span style="color:#16a34a;">{{ money(st.price) }}</span>{% endif %} ↗
+            </a>
+          {% endfor %}
+        </div>
+        {% else %}
         <table role="presentation" cellpadding="0" cellspacing="0" style="margin-top:16px;">
           <tr>
-            <td style="padding-right:8px;">{{ btn("https://www.soleretriever.com/search?query=" ~ (r.name|urlencode), "🎟 Enter raffles", true) }}</td>
-            <td style="padding-right:8px;">{{ btn("https://www.nike.com/w?q=" ~ (r.name|urlencode), "Search Nike", false) }}</td>
-            {% if r.stockx_url %}<td>{{ btn(r.stockx_url, "View on StockX", false) }}</td>{% endif %}
+            <td style="padding-right:8px;">{{ btn("https://www.soleretriever.com/search?query=" ~ (r.name|urlencode), "🎟 Find raffles", true) }}</td>
+            <td>{{ btn("https://www.nike.com/w?q=" ~ (r.name|urlencode), "Search Nike", false) }}</td>
           </tr>
         </table>
+        {% endif %}
+
+        <!-- Resale reference -->
+        {% if r.stockx_url %}
+        <div style="margin-top:8px;"><a href="{{ r.stockx_url }}" style="font-size:12px;color:#64748b;text-decoration:none;">View resale market on StockX ↗</a></div>
+        {% endif %}
 
       </td></tr>
     </table>

@@ -39,6 +39,12 @@ sort_by: profit
 # Max opportunities to include in the email (0 = no limit).
 max_results: 25
 
+# Per-shoe raffle/retailer links (from Sneakerjagers — free, no key). Each opportunity
+# is annotated with every retailer running a raffle for it, plus direct links.
+fetch_stockists: true
+stockists_include_webshops: true     # also list plain retail webshops, not just raffles
+stockists_headless_fallback: true    # use a headless browser if plain HTTP is bot-blocked
+
 # Raffle / retail quick-links shown in the report footer. Each card also links to a
 # per-shoe Sole Retriever raffle search automatically. Add your favourite sites here.
 raffle_sites:

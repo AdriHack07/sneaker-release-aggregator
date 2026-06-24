@@ -75,6 +75,12 @@ class Config(BaseModel):
     resale_signal: str = "lowest_ask"  # "lowest_ask" or "average"
     sort_by: str = "profit"            # "profit" (desc) or "date" (soonest first)
     max_results: int = 25
+    # Look up per-shoe raffle/retailer links from Sneakerjagers (free, no key).
+    fetch_stockists: bool = True
+    # Also include plain retail webshops (not just raffles) in the per-shoe list.
+    stockists_include_webshops: bool = True
+    # Use a headless browser (Playwright) when plain HTTP is bot-blocked.
+    stockists_headless_fallback: bool = True
     raffle_sites: List[RaffleSite] = Field(default_factory=_default_raffle_sites)
     api: ApiConfig = Field(default_factory=ApiConfig)
 

@@ -19,7 +19,10 @@ jobs:
           cache: pip
 
       - name: Install dependencies
-        run: pip install -e .
+        run: pip install -e ".[headless]"
+
+      - name: Install headless browser (Sneakerjagers fallback)
+        run: python -m playwright install --with-deps chromium
 
       - name: Send weekly report
         env:

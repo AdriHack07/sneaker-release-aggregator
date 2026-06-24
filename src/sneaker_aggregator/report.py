@@ -98,7 +98,13 @@ def render_text(opportunities: List[Opportunity], config: Config) -> str:
                 parts.append(f"premium {s.annual_price_premium:.2f}x")
             if parts:
                 lines.append("  " + " | ".join(parts))
-        lines.append(f"  Enter raffles: {raffle_search_url(r.name)}")
+        if r.stockists:
+            lines.append("  Where to buy / enter raffles:")
+            for st in r.stockists:
+                price = f" ({cur}{st.price:.0f})" if st.price else ""
+                lines.append(f"    - {st.shop_name}{price}: {st.link}")
+        else:
+            lines.append(f"  Find raffles: {raffle_search_url(r.name)}")
         if r.stockx_url:
             lines.append(f"  Resale (StockX): {r.stockx_url}")
         lines.append("")

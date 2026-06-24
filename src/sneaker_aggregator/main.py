@@ -14,10 +14,11 @@ import sys
 from pathlib import Path
 
 from .analysis import find_opportunities
-from .config import load_config, load_secrets
+from .config import Config, load_config, load_secrets
 from .email_sender import send_email
 from .report import render_html, render_text, subject_line
 from .sources.kicksdb import KicksDBClient
+from .sources.sneakerjagers import SneakerjagersClient
 
 
 def _parse_args(argv=None):
@@ -28,6 +29,32 @@ def _parse_args(argv=None):
     p.add_argument("--out", default="report.html", help="output path for --dry-run")
     p.add_argument("--sort", choices=["profit", "date"], help="override config sort order")
     return p.parse_args(argv)
+
+
+def _enrich_stockists(opportunities, config: Config) -> None:
+    """Annotate each opportunity with its raffle/retailer list from Sneakerjagers (free).
+
+    Best-effort: any failure (bot block, missing match, site change) leaves an empty
+    list, and the report falls back to per-shoe search links. Never raises.
+    """
+    if not opportunities:
+        return
+    try:
+        with SneakerjagersClient(
+            timeout=config.api.request_timeout_seconds,
+            headless_fallback=config.stockists_headless_fallback,
+        ) as sj:
+            matched = 0
+            for opp in opportunities:
+                opp.release.stockists = sj.get_stockists_for_sku(
+                    opp.release.sku, include_webshops=config.stockists_include_webshops
+                )
+                if opp.release.stockists:
+                    matched += 1
+            total = sum(len(o.release.stockists) for o in opportunities)
+            print(f"Sneakerjagers: matched {matched}/{len(opportunities)} shoes, {total} retailer links")
+    except Exception as e:  # noqa: BLE001 — enrichment must never break the report
+        print(f"Sneakerjagers enrichment skipped ({e}) — using fallback links.")
 
 
 def main(argv=None) -> int:
@@ -63,6 +90,9 @@ def main(argv=None) -> int:
     print(f"Fetched {len(releases)} releases for {', '.join(config.brands)}")
     opportunities = find_opportunities(releases, config)
     print(f"Found {len(opportunities)} opportunities clearing thresholds")
+
+    if config.fetch_stockists:
+        _enrich_stockists(opportunities, config)
 
     html = render_html(opportunities, config)
     text = render_text(opportunities, config)

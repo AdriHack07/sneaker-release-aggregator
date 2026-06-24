@@ -26,9 +26,19 @@ Retail price · release date · lowest / average / highest ask · estimated net 
 & margin · weekly orders · 90-day sales count & average · annual sales count, average,
 range (low–high), volatility, resale premium, and total dollar volume.
 
+**Where to buy / enter raffles:** each shoe is annotated with the full list of retailers
+running a raffle for it (plus retail webshops), with direct links — sourced for free from
+[Sneakerjagers](https://sneakerjagers.com). Shoes Sneakerjagers doesn't list (e.g. obscure
+US-exclusive packs) fall back to a per-shoe Sole Retriever / Nike search link.
+
 > **Note on bids:** KicksDB's StockX API exposes **ask-side data only** — there is no bid
 > (highest offer) field, so bids are not in the report. Statistics are blank for brand-new
 > releases that have not started trading yet.
+
+> **Note on raffle data:** Sneakerjagers is accessed via its free, undocumented internal
+> endpoints (no key). The lookup uses browser headers + retries and an optional headless
+> browser (Playwright) fallback if a request is bot-blocked; if it ever changes, only the
+> raffle annotations are affected — the rest of the report keeps working.
 
 ## Setup
 
@@ -46,6 +56,9 @@ range (low–high), volatility, resale premium, and total dollar volume.
 python -m venv .venv && source .venv/bin/activate   # Windows: .venv\Scripts\activate
 pip install -e .
 pip install pytest                                   # for tests only
+
+# Optional: headless-browser fallback for raffle lookups (recommended for CI):
+pip install -e ".[headless]" && python -m playwright install chromium
 
 cp .env.example .env        # then edit .env with your real values
 
@@ -86,8 +99,11 @@ All tunables live in [`config.yaml`](config.yaml) (secrets stay in env vars):
 - `resale_signal` — `lowest_ask` (default) or `average`.
 - `sort_by` — `profit` (default) or `date` (soonest release first). Override per run with
   `--sort profit|date`.
-- `raffle_sites` — quick-links shown in the report footer (each card also auto-links to a
-  per-shoe Sole Retriever raffle search and a Nike search).
+- `raffle_sites` — quick-links shown in the report footer (used as a fallback when a shoe
+  isn't matched on Sneakerjagers).
+- `fetch_stockists` — annotate each shoe with its raffle/retailer list from Sneakerjagers
+  (default true). `stockists_include_webshops` also lists plain retail webshops;
+  `stockists_headless_fallback` enables the Playwright fallback when bot-blocked.
 - `api.market` — pricing market (`US`, `DE`, `EU`, `UK`, …); set to your resale market.
 - `max_results` — cap on opportunities per email.
 
@@ -111,7 +127,8 @@ All tunables live in [`config.yaml`](config.yaml) (secrets stay in env vars):
 src/sneaker_aggregator/
   config.py            # config.yaml + env secrets
   models.py            # Release, MarketStats, Opportunity
-  sources/kicksdb.py   # KicksDB StockX API client
+  sources/kicksdb.py        # KicksDB StockX API client (releases + market data)
+  sources/sneakerjagers.py  # free per-shoe raffle/retailer lookup (+ headless fallback)
   analysis.py          # profit/margin/filter/rank  (unit-tested core)
   report.py            # Jinja2 HTML + text rendering
   email_sender.py      # Gmail SMTP
