@@ -33,11 +33,15 @@ thresholds:
 resale_signal: lowest_ask
 
 # How to order the report: "profit" (highest profit first) or "date" (soonest
-# release first). Override per-run with --sort profit|date.
+# release first). Override per-run with --sort profit|date (applies to both sections).
 sort_by: profit
 
 # Max opportunities to include in the email (0 = no limit).
 max_results: 25
+
+# Shoes that dropped more than this many days ago are moved to a separate
+# "Already released" section at the bottom (they are kept, not excluded).
+recent_days: 7
 
 # Per-shoe raffle/retailer links (from Sneakerjagers — free, no key). Each opportunity
 # is annotated with every retailer running a raffle for it, plus direct links.

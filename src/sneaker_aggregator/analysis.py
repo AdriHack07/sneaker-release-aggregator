@@ -80,6 +80,25 @@ def find_opportunities(
     return opportunities
 
 
+def split_recent(
+    opportunities: List[Opportunity], recent_days: int, today: Optional[date] = None
+) -> tuple[List[Opportunity], List[Opportunity]]:
+    """Partition an already-sorted list into (current, already_released).
+
+    A shoe goes to ``already_released`` only if it dropped more than ``recent_days``
+    ago. Upcoming, undated, and recently-released shoes stay in ``current``. Order is
+    preserved within each side, so the active sort order carries through.
+    """
+    today = today or date.today()
+    cutoff = today - timedelta(days=recent_days)
+    current: List[Opportunity] = []
+    released: List[Opportunity] = []
+    for o in opportunities:
+        rd = o.release.release_date
+        (released if rd is not None and rd < cutoff else current).append(o)
+    return current, released
+
+
 def _sort_opportunities(opportunities: List[Opportunity], sort_by: str) -> None:
     """Sort in place: by release date (soonest first) or by profit (highest first)."""
     if sort_by == "date":

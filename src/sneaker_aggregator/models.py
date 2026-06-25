@@ -34,6 +34,7 @@ class Stockist(BaseModel):
     shop_name: str
     link: str
     price: Optional[float] = None  # listed price at that shop, if provided
+    is_raffle: bool = False        # True if entered via a raffle (vs. straight retail)
 
 
 class Release(BaseModel):

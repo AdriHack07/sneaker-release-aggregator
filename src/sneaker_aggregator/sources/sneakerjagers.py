@@ -74,7 +74,7 @@ def parse_links(item: Dict[str, Any], include_webshops: bool = True) -> List[Sto
         groups.append((item.get("links_webshops") or [], False))
 
     by_shop: Dict[str, Stockist] = {}
-    for links, _is_raffle in groups:
+    for links, is_raffle in groups:
         for link in links:
             shop = link.get("shop")
             link_id = link.get("id")
@@ -86,7 +86,9 @@ def parse_links(item: Dict[str, Any], include_webshops: bool = True) -> List[Sto
             if existing is None or (
                 price is not None and (existing.price is None or price < existing.price)
             ):
-                by_shop[shop] = Stockist(shop_name=shop, link=url, price=price)
+                by_shop[shop] = Stockist(
+                    shop_name=shop, link=url, price=price, is_raffle=is_raffle
+                )
     return sorted(
         by_shop.values(),
         key=lambda s: (s.price is None, s.price or 0, s.shop_name.lower()),
@@ -178,6 +180,22 @@ class SneakerjagersClient:
 
     # -- high-level API ---------------------------------------------------------
 
+    def _search(self, query: str) -> List[Dict[str, Any]]:
+        """Run a search query and return its raw items (empty on failure)."""
+        data = self._get_json("/api/sneakers/search", params={"query": query})
+        return (data or {}).get("items") or []
+
+    def _pick(self, items: List[Dict[str, Any]], want: str) -> Optional[Tuple[str, str]]:
+        """Choose the item whose slug carries the wanted stylecode, else a confident
+        single/few-hit match — never the unfiltered default. Returns (slug, id)."""
+        if not items:
+            return None
+        coded = [it for it in items if stylecode_from_slug(it.get("slug") or "") == want]
+        chosen = coded[0] if coded else (items[0] if len(items) <= 5 else None)
+        if chosen and chosen.get("slug") and chosen.get("id"):
+            return (chosen["slug"], str(chosen["id"]))
+        return None
+
     def find_by_sku(self, sku: str) -> Optional[Tuple[str, str]]:
         """Find a shoe's (slug, id) by searching its SKU via /api/sneakers/search.
 
@@ -185,16 +203,17 @@ class SneakerjagersClient:
         carries the same stylecode, or when the search returned only a few hits
         (slug lacks a code but the SKU clearly matched) — never the unfiltered default.
         """
-        data = self._get_json("/api/sneakers/search", params={"query": sku})
-        items = (data or {}).get("items") or []
-        if not items:
+        return self._pick(self._search(sku), sku.upper())
+
+    def find_by_name(self, name: str, sku: str = "") -> Optional[Tuple[str, str]]:
+        """Fallback lookup by shoe name when the SKU isn't indexed under that code.
+
+        Prefer a hit whose slug stylecode matches the SKU; otherwise accept a
+        confident single/few-hit name match.
+        """
+        if not name:
             return None
-        want = sku.upper()
-        coded = [it for it in items if stylecode_from_slug(it.get("slug") or "") == want]
-        chosen = coded[0] if coded else (items[0] if len(items) <= 5 else None)
-        if chosen and chosen.get("slug") and chosen.get("id"):
-            return (chosen["slug"], str(chosen["id"]))
-        return None
+        return self._pick(self._search(name), sku.upper())
 
     def get_raffles(self, slug: str, sid: str, include_webshops: bool = True) -> List[Stockist]:
         """Fetch the per-shoe page and return its raffle/webshop retailers."""
@@ -205,9 +224,13 @@ class SneakerjagersClient:
         item = ((data or {}).get("pageProps") or {}).get("item") or {}
         return parse_links(item, include_webshops=include_webshops)
 
-    def get_stockists_for_sku(self, sku: str, include_webshops: bool = True) -> List[Stockist]:
-        """Convenience: SKU -> raffle/retailer list (empty if not found)."""
+    def get_stockists_for_sku(
+        self, sku: str, name: str = "", include_webshops: bool = True
+    ) -> List[Stockist]:
+        """Convenience: SKU (with optional name fallback) -> retailer list (empty if not found)."""
         match = self.find_by_sku(sku)
+        if not match and name:
+            match = self.find_by_name(name, sku)
         if not match:
             return []
         return self.get_raffles(match[0], match[1], include_webshops=include_webshops)

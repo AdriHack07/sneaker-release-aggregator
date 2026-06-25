@@ -75,6 +75,9 @@ class Config(BaseModel):
     resale_signal: str = "lowest_ask"  # "lowest_ask" or "average"
     sort_by: str = "profit"            # "profit" (desc) or "date" (soonest first)
     max_results: int = 25
+    # Shoes released more than this many days ago drop to an "Already released" section
+    # at the bottom of the report (upcoming/undated/just-dropped shoes stay up top).
+    recent_days: int = 7
     # Look up per-shoe raffle/retailer links from Sneakerjagers (free, no key).
     fetch_stockists: bool = True
     # Also include plain retail webshops (not just raffles) in the per-shoe list.

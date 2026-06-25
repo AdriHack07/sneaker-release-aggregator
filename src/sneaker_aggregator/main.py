@@ -39,22 +39,28 @@ def _enrich_stockists(opportunities, config: Config) -> None:
     """
     if not opportunities:
         return
-    try:
-        with SneakerjagersClient(
-            timeout=config.api.request_timeout_seconds,
-            headless_fallback=config.stockists_headless_fallback,
-        ) as sj:
-            matched = 0
-            for opp in opportunities:
-                opp.release.stockists = sj.get_stockists_for_sku(
-                    opp.release.sku, include_webshops=config.stockists_include_webshops
+    with SneakerjagersClient(
+        timeout=config.api.request_timeout_seconds,
+        headless_fallback=config.stockists_headless_fallback,
+    ) as sj:
+        matched = 0
+        for opp in opportunities:
+            r = opp.release
+            try:
+                r.stockists = sj.get_stockists_for_sku(
+                    r.sku, name=r.name, include_webshops=config.stockists_include_webshops
                 )
-                if opp.release.stockists:
-                    matched += 1
-            total = sum(len(o.release.stockists) for o in opportunities)
-            print(f"Sneakerjagers: matched {matched}/{len(opportunities)} shoes, {total} retailer links")
-    except Exception as e:  # noqa: BLE001 — enrichment must never break the report
-        print(f"Sneakerjagers enrichment skipped ({e}) — using fallback links.")
+            except Exception as e:  # noqa: BLE001 — one shoe must never break the rest
+                r.stockists = []
+                print(f"  {r.sku}: lookup failed ({e})")
+                continue
+            if r.stockists:
+                matched += 1
+                print(f"  {r.sku}: {len(r.stockists)} retailers")
+            else:
+                print(f"  {r.sku}: no retailers found — using search-link fallback")
+        total = sum(len(o.release.stockists) for o in opportunities)
+        print(f"Sneakerjagers: matched {matched}/{len(opportunities)} shoes, {total} retailer links")
 
 
 def main(argv=None) -> int:

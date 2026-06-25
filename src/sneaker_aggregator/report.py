@@ -9,6 +9,7 @@ from urllib.parse import quote_plus
 
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 
+from .analysis import split_recent
 from .config import Config
 from .models import Opportunity
 
@@ -52,8 +53,11 @@ def subject_line(opportunities: List[Opportunity]) -> str:
 
 def render_html(opportunities: List[Opportunity], config: Config) -> str:
     template = _env().get_template("report.html.j2")
+    current, released = split_recent(opportunities, config.recent_days)
     return template.render(
-        opportunities=opportunities,
+        opportunities=current,
+        released=released,
+        total_count=len(opportunities),
         brands=config.brands,
         resale_signal=config.resale_signal,
         sort_by=config.sort_by,
@@ -70,7 +74,17 @@ def render_text(opportunities: List[Opportunity], config: Config) -> str:
     if not opportunities:
         return "No releases cleared the profit thresholds this week."
     cur = currency_symbol(config.api.market)
+    current, released = split_recent(opportunities, config.recent_days)
     lines = [f"Weekly Sneaker Flip Report — {len(opportunities)} opportunities", ""]
+    _text_section(lines, current, cur)
+    if released:
+        lines.append("== Already released (a few weeks back) ==")
+        lines.append("")
+        _text_section(lines, released, cur)
+    return "\n".join(lines)
+
+
+def _text_section(lines: List[str], opportunities: List[Opportunity], cur: str) -> None:
     for o in opportunities:
         r = o.release
         s = r.stats
@@ -99,13 +113,13 @@ def render_text(opportunities: List[Opportunity], config: Config) -> str:
             if parts:
                 lines.append("  " + " | ".join(parts))
         if r.stockists:
-            lines.append("  Where to buy / enter raffles:")
+            lines.append("  3rd-party retailers (raffle / buy):")
             for st in r.stockists:
                 price = f" ({cur}{st.price:.0f})" if st.price else ""
-                lines.append(f"    - {st.shop_name}{price}: {st.link}")
-        else:
-            lines.append(f"  Find raffles: {raffle_search_url(r.name)}")
+                tag = " [raffle]" if st.is_raffle else ""
+                lines.append(f"    - {st.shop_name}{tag}{price}: {st.link}")
+        # Always offer a manual route too, so you're never stuck on SNKRS alone.
+        lines.append(f"  All raffles for this shoe: {raffle_search_url(r.name)}")
         if r.stockx_url:
             lines.append(f"  Resale (StockX): {r.stockx_url}")
         lines.append("")
-    return "\n".join(lines)
