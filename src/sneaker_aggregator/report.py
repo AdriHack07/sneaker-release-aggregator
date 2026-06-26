@@ -5,22 +5,11 @@ from __future__ import annotations
 from datetime import datetime
 from pathlib import Path
 from typing import List
-from urllib.parse import quote_plus
 
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 
-from .analysis import split_recent
 from .config import Config
 from .models import Opportunity
-
-
-def raffle_search_url(name: str) -> str:
-    """Sole Retriever search for a shoe — lists every raffle/retailer for that release."""
-    return f"https://www.soleretriever.com/search?query={quote_plus(name)}"
-
-
-def nike_search_url(name: str) -> str:
-    return f"https://www.nike.com/w?q={quote_plus(name)}"
 
 _TEMPLATE_DIR = Path(__file__).resolve().parents[2] / "templates"
 
@@ -53,10 +42,8 @@ def subject_line(opportunities: List[Opportunity]) -> str:
 
 def render_html(opportunities: List[Opportunity], config: Config) -> str:
     template = _env().get_template("report.html.j2")
-    current, released = split_recent(opportunities, config.recent_days)
     return template.render(
-        opportunities=current,
-        released=released,
+        opportunities=opportunities,
         total_count=len(opportunities),
         brands=config.brands,
         resale_signal=config.resale_signal,
@@ -65,7 +52,6 @@ def render_html(opportunities: List[Opportunity], config: Config) -> str:
         shipping_cost=config.fees.shipping_cost,
         market=config.api.market,
         cur=currency_symbol(config.api.market),
-        raffle_sites=config.raffle_sites,
         generated_at=datetime.now().strftime("%A, %d %B %Y"),
     )
 
@@ -74,13 +60,8 @@ def render_text(opportunities: List[Opportunity], config: Config) -> str:
     if not opportunities:
         return "No releases cleared the profit thresholds this week."
     cur = currency_symbol(config.api.market)
-    current, released = split_recent(opportunities, config.recent_days)
     lines = [f"Weekly Sneaker Flip Report — {len(opportunities)} opportunities", ""]
-    _text_section(lines, current, cur)
-    if released:
-        lines.append("== Already released (a few weeks back) ==")
-        lines.append("")
-        _text_section(lines, released, cur)
+    _text_section(lines, opportunities, cur)
     return "\n".join(lines)
 
 
@@ -112,14 +93,6 @@ def _text_section(lines: List[str], opportunities: List[Opportunity], cur: str) 
                 parts.append(f"premium {s.annual_price_premium:.2f}x")
             if parts:
                 lines.append("  " + " | ".join(parts))
-        if r.stockists:
-            lines.append("  3rd-party retailers (raffle / buy):")
-            for st in r.stockists:
-                price = f" ({cur}{st.price:.0f})" if st.price else ""
-                tag = " [raffle]" if st.is_raffle else ""
-                lines.append(f"    - {st.shop_name}{tag}{price}: {st.link}")
-        # Always offer a manual route too, so you're never stuck on SNKRS alone.
-        lines.append(f"  All raffles for this shoe: {raffle_search_url(r.name)}")
         if r.stockx_url:
             lines.append(f"  Resale (StockX): {r.stockx_url}")
         lines.append("")

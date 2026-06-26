@@ -15,10 +15,6 @@ dependencies = [
     "python-dotenv>=1.0",
 ]
 
-[project.optional-dependencies]
-# Headless-browser fallback for the Sneakerjagers raffle lookup.
-headless = ["playwright>=1.44"]
-
 [tool.setuptools.packages.find]
 where = ["src"]
 

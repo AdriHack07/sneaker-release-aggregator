@@ -13,10 +13,6 @@
     <td style="padding:7px 10px;color:#0f172a;font-size:13px;font-weight:600;text-align:right;border-bottom:1px solid #f1f5f9;">{{ value }}</td>
   </tr>
 {%- endmacro %}
-{% macro btn(href, label, primary) -%}
-  <a href="{{ href }}" style="display:inline-block;text-decoration:none;font-size:13px;font-weight:600;padding:9px 14px;border-radius:8px;
-     {% if primary %}background:#111827;color:#ffffff;{% else %}background:#ffffff;color:#111827;border:1px solid #cbd5e1;{% endif %}">{{ label }}</a>
-{%- endmacro %}
 {% macro card(o, idx) %}
 {% set r = o.release %}
 {% set s = r.stats %}
@@ -77,32 +73,9 @@
       {{ stat("Weekly orders / annual $ volume", (r.weekly_orders if r.weekly_orders else "—") ~ "  /  " ~ money(s.annual_total_dollars if s else none), true) }}
     </table>
 
-    <!-- 3rd-party retailers for this shoe -->
-    {% if r.stockists %}
-    {% set has_raffle = r.stockists | selectattr('is_raffle') | list | length > 0 %}
-    <div style="margin-top:16px;font-size:11px;letter-spacing:0.6px;color:#94a3b8;font-weight:700;text-transform:uppercase;">
-      {{ '3rd-party retailers — enter raffle / buy' if has_raffle else 'Where to buy (3rd-party retailers)' }} ({{ r.stockists|length }})
-    </div>
-    <div style="margin-top:8px;">
-      {% for st in r.stockists %}
-        <a href="{{ st.link }}" style="display:inline-block;text-decoration:none;font-size:13px;color:#111827;font-weight:600;background:#f1f5f9;border:1px solid #e2e8f0;border-radius:8px;padding:8px 12px;margin:0 8px 8px 0;">
-          {% if st.is_raffle %}🎟 {% endif %}{{ st.shop_name }}{% if st.price %} · <span style="color:#16a34a;">{{ money(st.price) }}</span>{% endif %} ↗
-        </a>
-      {% endfor %}
-    </div>
-    {% endif %}
-
-    <!-- Always-on manual routes, so you're never limited to SNKRS -->
-    <table role="presentation" cellpadding="0" cellspacing="0" style="margin-top:{{ '8px' if r.stockists else '16px' }};">
-      <tr>
-        <td style="padding-right:8px;">{{ btn("https://www.soleretriever.com/search?query=" ~ (r.name|urlencode), "🎟 All raffles", not r.stockists) }}</td>
-        <td>{{ btn("https://www.nike.com/w?q=" ~ (r.name|urlencode), "Search Nike", false) }}</td>
-      </tr>
-    </table>
-
     <!-- Resale reference -->
     {% if r.stockx_url %}
-    <div style="margin-top:8px;"><a href="{{ r.stockx_url }}" style="font-size:12px;color:#64748b;text-decoration:none;">View resale market on StockX ↗</a></div>
+    <div style="margin-top:16px;"><a href="{{ r.stockx_url }}" style="font-size:12px;color:#64748b;text-decoration:none;">View resale market on StockX ↗</a></div>
     {% endif %}
 
   </td></tr>
@@ -135,30 +108,6 @@
     {% for o in opportunities %}
       {{ card(o, loop.index) }}
     {% endfor %}
-
-    {% if released %}
-    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-top:28px;">
-      <tr><td style="padding:4px 4px;">
-        <div style="font-size:15px;font-weight:800;color:#0f172a;">📦 Already released</div>
-        <div style="font-size:12px;color:#94a3b8;margin-top:3px;">Dropped more than a few days ago — still flippable, raffles likely closed.</div>
-      </td></tr>
-    </table>
-    {% for o in released %}
-      {{ card(o, loop.index) }}
-    {% endfor %}
-    {% endif %}
-
-    <!-- Raffle sites footer -->
-    {% if raffle_sites %}
-    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#ffffff;border:1px solid #e2e8f0;border-radius:14px;margin-top:20px;">
-      <tr><td style="padding:18px 20px;">
-        <div style="font-size:13px;font-weight:700;color:#0f172a;margin-bottom:10px;">🎟 Where to take your chances</div>
-        {% for site in raffle_sites %}
-          <a href="{{ site.url }}" style="display:inline-block;text-decoration:none;font-size:13px;color:#111827;font-weight:600;background:#f1f5f9;border-radius:8px;padding:8px 12px;margin:0 8px 8px 0;">{{ site.name }} ↗</a>
-        {% endfor %}
-      </td></tr>
-    </table>
-    {% endif %}
 
     <p style="color:#94a3b8;font-size:11px;margin:18px 4px 8px;line-height:1.6;">
       Profit = resale signal ({{ resale_signal }}) minus {{ "%.0f"|format(fee_pct * 100) }}% fees{% if shipping_cost %} and {{ money(shipping_cost) }} shipping{% endif %}, minus retail.

@@ -46,12 +46,14 @@ def evaluate(release: Release, config: Config, today: Optional[date] = None) -> 
 
 
 def in_window(release: Release, window: Window, today: date) -> bool:
-    """True if the release date is within the configured window (or unknown)."""
+    """True if the release is upcoming (today or later) — or undated.
+
+    The email shows only upcoming releases: anything that already dropped is excluded.
+    Undated (TBA) products are kept rather than silently dropped.
+    """
     if release.release_date is None:
-        return True  # keep undated products rather than silently dropping them
-    start = today - timedelta(days=window.past_days)
-    end = today + timedelta(days=window.future_days)
-    return start <= release.release_date <= end
+        return True  # keep undated (TBA) products
+    return today <= release.release_date <= today + timedelta(days=window.future_days)
 
 
 def _brand_match(release: Release, brands: List[str]) -> bool:
@@ -78,25 +80,6 @@ def find_opportunities(
     if config.max_results > 0:
         opportunities = opportunities[: config.max_results]
     return opportunities
-
-
-def split_recent(
-    opportunities: List[Opportunity], recent_days: int, today: Optional[date] = None
-) -> tuple[List[Opportunity], List[Opportunity]]:
-    """Partition an already-sorted list into (current, already_released).
-
-    A shoe goes to ``already_released`` only if it dropped more than ``recent_days``
-    ago. Upcoming, undated, and recently-released shoes stay in ``current``. Order is
-    preserved within each side, so the active sort order carries through.
-    """
-    today = today or date.today()
-    cutoff = today - timedelta(days=recent_days)
-    current: List[Opportunity] = []
-    released: List[Opportunity] = []
-    for o in opportunities:
-        rd = o.release.release_date
-        (released if rd is not None and rd < cutoff else current).append(o)
-    return current, released
 
 
 def _sort_opportunities(opportunities: List[Opportunity], sort_by: str) -> None:

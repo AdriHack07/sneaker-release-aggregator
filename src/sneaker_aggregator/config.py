@@ -21,7 +21,7 @@ except ImportError:  # dotenv is optional at runtime (e.g. in CI, secrets are re
 
 
 class Window(BaseModel):
-    past_days: int = 14
+    # Only upcoming releases are shown, so there is no "past" side — just how far ahead to look.
     future_days: int = 42
 
 
@@ -51,22 +51,6 @@ class ApiConfig(BaseModel):
     request_timeout_seconds: int = 30
 
 
-class RaffleSite(BaseModel):
-    """A quick-link shown in the report footer for entering raffles / buying at retail."""
-
-    name: str
-    url: str
-
-
-def _default_raffle_sites() -> List[RaffleSite]:
-    return [
-        RaffleSite(name="Nike SNKRS", url="https://www.nike.com/launch"),
-        RaffleSite(name="Sole Retriever (all raffles)", url="https://www.soleretriever.com/sneaker-release-dates"),
-        RaffleSite(name="END. Launches", url="https://launches.endclothing.com/"),
-        RaffleSite(name="The Edit LDN", url="https://www.theeditldn.com/en/raffles"),
-    ]
-
-
 class Config(BaseModel):
     brands: List[str] = Field(default_factory=lambda: ["Nike", "Jordan"])
     window: Window = Field(default_factory=Window)
@@ -75,16 +59,6 @@ class Config(BaseModel):
     resale_signal: str = "lowest_ask"  # "lowest_ask" or "average"
     sort_by: str = "profit"            # "profit" (desc) or "date" (soonest first)
     max_results: int = 25
-    # Shoes released more than this many days ago drop to an "Already released" section
-    # at the bottom of the report (upcoming/undated/just-dropped shoes stay up top).
-    recent_days: int = 7
-    # Look up per-shoe raffle/retailer links from Sneakerjagers (free, no key).
-    fetch_stockists: bool = True
-    # Also include plain retail webshops (not just raffles) in the per-shoe list.
-    stockists_include_webshops: bool = True
-    # Use a headless browser (Playwright) when plain HTTP is bot-blocked.
-    stockists_headless_fallback: bool = True
-    raffle_sites: List[RaffleSite] = Field(default_factory=_default_raffle_sites)
     api: ApiConfig = Field(default_factory=ApiConfig)
 
 

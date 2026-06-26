@@ -4,9 +4,5 @@ PyYAML>=6.0
 Jinja2>=3.1
 python-dotenv>=1.0
 
-# Headless-browser fallback for the Sneakerjagers raffle lookup (optional but recommended,
-# especially in CI). After installing, run: python -m playwright install chromium
-playwright>=1.44
-
 # dev / test
 pytest>=8.0

@@ -9,7 +9,6 @@ from sneaker_aggregator.analysis import (
     find_opportunities,
     in_window,
     net_payout,
-    split_recent,
 )
 from sneaker_aggregator.config import Config, Fees
 from sneaker_aggregator.models import Release
@@ -94,7 +93,7 @@ def test_evaluate_missing_prices_returns_none():
 # ----- in_window --------------------------------------------------------------
 
 
-def test_in_window_respects_bounds():
+def test_in_window_keeps_today_and_future_within_bounds():
     cfg = default_config()
     today = date(2026, 6, 23)
     assert in_window(make_release(release_date=today), cfg.window, today)
@@ -108,11 +107,13 @@ def test_in_window_respects_bounds():
         cfg.window,
         today,
     )
-    assert not in_window(
-        make_release(release_date=today - timedelta(days=cfg.window.past_days + 1)),
-        cfg.window,
-        today,
-    )
+
+
+def test_in_window_excludes_past_releases():
+    cfg = default_config()
+    today = date(2026, 6, 23)
+    assert not in_window(make_release(release_date=today - timedelta(days=1)), cfg.window, today)
+    assert not in_window(make_release(release_date=today - timedelta(days=60)), cfg.window, today)
 
 
 def test_in_window_keeps_undated():
@@ -160,40 +161,15 @@ def test_find_opportunities_respects_max_results():
     assert opps[0].release.sku == "B"
 
 
-# ----- split_recent -----------------------------------------------------------
-
-
-def _opp(sku, release_date):
-    return evaluate(make_release(sku=sku, release_date=release_date), default_config())
-
-
-def test_split_recent_partitions_by_cutoff():
+def test_find_opportunities_excludes_past_releases():
+    cfg = default_config()
     today = date(2026, 6, 25)
-    opps = [
-        _opp("UPCOMING", today + timedelta(days=10)),
-        _opp("JUST_DROPPED", today - timedelta(days=3)),   # within recent_days=7 -> current
-        _opp("OLD", today - timedelta(days=30)),            # older -> released
-        _opp("UNDATED", None),                              # undated -> current
+    releases = [
+        make_release(sku="PAST", release_date=today - timedelta(days=5), lowest_ask=600.0),
+        make_release(sku="FUTURE", release_date=today + timedelta(days=5), lowest_ask=600.0),
+        make_release(sku="UNDATED", release_date=None, lowest_ask=600.0),
     ]
-    current, released = split_recent(opps, recent_days=7, today=today)
-    assert [o.release.sku for o in current] == ["UPCOMING", "JUST_DROPPED", "UNDATED"]
-    assert [o.release.sku for o in released] == ["OLD"]
-
-
-def test_split_recent_preserves_input_order():
-    today = date(2026, 6, 25)
-    opps = [
-        _opp("OLD_B", today - timedelta(days=40)),
-        _opp("OLD_A", today - timedelta(days=20)),
-    ]
-    _current, released = split_recent(opps, recent_days=7, today=today)
-    assert [o.release.sku for o in released] == ["OLD_B", "OLD_A"]  # order unchanged
-
-
-def test_split_recent_boundary_is_inclusive_for_current():
-    today = date(2026, 6, 25)
-    # Exactly recent_days ago stays in current (cutoff is strict <).
-    opps = [_opp("EDGE", today - timedelta(days=7))]
-    current, released = split_recent(opps, recent_days=7, today=today)
-    assert [o.release.sku for o in current] == ["EDGE"]
-    assert released == []
+    opps = find_opportunities(releases, cfg, today=today)
+    skus = {o.release.sku for o in opps}
+    assert "PAST" not in skus
+    assert {"FUTURE", "UNDATED"} <= skus

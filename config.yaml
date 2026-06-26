@@ -6,11 +6,9 @@ brands:
   - Nike
   - Jordan
 
-# Release window (relative to "today") to consider, in days.
-# Negative side = already released (now trading); positive = upcoming.
-# Upcoming releases only show a resale price once StockX has pre-release asks.
+# Release window. Only UPCOMING releases are shown (anything already released is excluded);
+# undated/TBA shoes are kept. future_days = how far ahead to look.
 window:
-  past_days: 30
   future_days: 60
 
 # Resale platform fees & costs used to compute *net* take-home payout.
@@ -38,28 +36,6 @@ sort_by: profit
 
 # Max opportunities to include in the email (0 = no limit).
 max_results: 25
-
-# Shoes that dropped more than this many days ago are moved to a separate
-# "Already released" section at the bottom (they are kept, not excluded).
-recent_days: 7
-
-# Per-shoe raffle/retailer links (from Sneakerjagers — free, no key). Each opportunity
-# is annotated with every retailer running a raffle for it, plus direct links.
-fetch_stockists: true
-stockists_include_webshops: true     # also list plain retail webshops, not just raffles
-stockists_headless_fallback: true    # use a headless browser if plain HTTP is bot-blocked
-
-# Raffle / retail quick-links shown in the report footer. Each card also links to a
-# per-shoe Sole Retriever raffle search automatically. Add your favourite sites here.
-raffle_sites:
-  - name: Nike SNKRS
-    url: https://www.nike.com/launch
-  - name: Sole Retriever (all raffles)
-    url: https://www.soleretriever.com/sneaker-release-dates
-  - name: END. Launches
-    url: https://launches.endclothing.com/
-  - name: The Edit LDN
-    url: https://www.theeditldn.com/en/raffles
 
 # How to fetch from KicksDB.
 api:
