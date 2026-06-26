@@ -1,0 +1,30 @@
+name: Daily Web Snapshot Refresh
+
+on:
+  schedule:
+    # Daily at 06:00 UTC. The website's detail pages fetch live, so the list
+    # snapshot only needs a daily refresh. (cron is UTC.)
+    - cron: "0 6 * * *"
+  workflow_dispatch: {}  # allows manual runs from the Actions tab
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install dependencies
+        run: pip install -e .
+
+      - name: Refresh Supabase snapshot
+        env:
+          KICKSDB_API_KEY: ${{ secrets.KICKSDB_API_KEY }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+        run: python -m sneaker_aggregator.refresh

@@ -70,6 +70,10 @@ class Secrets(BaseModel):
     gmail_address: str
     gmail_app_password: str
     recipient_email: str
+    # Supabase target for the web-platform refresh job. Optional for the email path
+    # (only required by `refresh.py`, where require_supabase=True).
+    supabase_url: str = ""
+    supabase_service_key: str = ""
 
 
 def load_config(path: str | Path = "config.yaml") -> Config:
@@ -90,16 +94,22 @@ def _require(name: str) -> str:
     return val
 
 
-def load_secrets(require_email: bool = True) -> Secrets:
+def load_secrets(require_email: bool = True, require_supabase: bool = False) -> Secrets:
     """Load secrets from the environment.
 
     When `require_email` is False (e.g. --dry-run), Gmail/recipient values are
     optional and default to empty strings so the API key alone suffices.
+
+    When `require_supabase` is True (the web refresh job), the Supabase URL and
+    service key are mandatory; otherwise they are optional and default to empty.
     """
     email_getter = _require if require_email else (lambda n: os.environ.get(n, ""))
+    supabase_getter = _require if require_supabase else (lambda n: os.environ.get(n, ""))
     return Secrets(
         kicksdb_api_key=_require("KICKSDB_API_KEY"),
         gmail_address=email_getter("GMAIL_ADDRESS"),
         gmail_app_password=email_getter("GMAIL_APP_PASSWORD"),
         recipient_email=email_getter("RECIPIENT_EMAIL"),
+        supabase_url=supabase_getter("SUPABASE_URL"),
+        supabase_service_key=supabase_getter("SUPABASE_SERVICE_KEY"),
     )
